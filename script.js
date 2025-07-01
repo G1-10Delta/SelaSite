@@ -21,29 +21,26 @@ function requireAccess() {
     }
 }
 
-function getDailyQuote(quotes) {
-    const todayKey = getTodayKey();
-    const stored = JSON.parse(localStorage.getItem(quoteKey));
-
-    if (stored && stored.date === todayKey) {
-        return stored.quote;
-    } else {
-        const quote = quotes[Math.floor(Math.random() * quotes.length)];
-        localStorage.setItem(quoteKey, JSON.stringify({ date: todayKey, quote }));
-        return quote;
-    }
+function getDeterministicQuote(quotes) {
+  const today = new Date().toISOString().split('T')[0];
+  let hash = 0;
+  for (let i = 0; i < today.length; i++) {
+    hash = today.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const index = Math.abs(hash) % quotes.length;
+  return quotes[index];
 }
 
 async function loadQuotes() {
-    try {
-        const res = await fetch("quotes.json");
-        const quotes = await res.json();
-        const quote = getDailyQuote(quotes);
-        document.getElementById("quote").innerText = quote;
-    } catch (err) {
-        document.getElementById("quote").innerText = "Failed to load quotes.";
-        console.error("Error loading quotes:", err);
-    }
+  try {
+    const res = await fetch("quotes.json");
+    const quotes = await res.json();
+    const quote = getDeterministicQuote(quotes);
+    document.getElementById("quote").innerText = quote;
+  } catch (err) {
+    document.getElementById("quote").innerText = "Failed to load quotes.";
+    console.error("Error loading quotes:", err);
+  }
 }
 
 if (requireAccess()) {

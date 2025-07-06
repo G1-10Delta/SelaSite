@@ -9,6 +9,7 @@ const maxAttempts = 6;
 let answer = "";
 let quote = "";
 let validGuesses = [];
+const keyboardStatus = {}; // e.g., { a: "correct", t: "present", x: "absent" }
 
 const keys = [
   "qwertyuiop".split(""),
@@ -40,7 +41,8 @@ async function loadGameData() {
 function updateBoard() {
   board.innerHTML = "";
   for (let attempt of attempts) {
-    const row = renderRow(attempt, answer);
+    const status = getGuessStatus(attempt);
+    const row = renderRow(attempt, status);
     board.append(...row);
   }
   if (attempts.length < maxAttempts) {
@@ -49,23 +51,39 @@ function updateBoard() {
   }
 }
 
-function renderRow(guess, answerWord = "") {
+function getGuessStatus(guess) {
+  const status = Array(5).fill("absent");
+  const answerLetterCount = {};
+  for (let i = 0; i < 5; i++) {
+    const letter = answer[i];
+    answerLetterCount[letter] = (answerLetterCount[letter] || 0) + 1;
+  }
+  for (let i = 0; i < 5; i++) {
+    if (guess[i] === answer[i]) {
+      status[i] = "correct";
+      answerLetterCount[guess[i]]--;
+    }
+  }
+  for (let i = 0; i < 5; i++) {
+    if (status[i] === "correct") continue;
+    const letter = guess[i];
+    if (answer.includes(letter) && answerLetterCount[letter] > 0) {
+      status[i] = "present";
+      answerLetterCount[letter]--;
+    }
+  }
+  return status;
+}
+
+function renderRow(guess, status = []) {
   const row = [];
   for (let i = 0; i < 5; i++) {
     const tile = document.createElement("div");
     tile.className = "tile";
     tile.textContent = guess[i] || "";
-
-    if (answerWord && guess[i]) {
-      if (guess[i] === answerWord[i]) {
-        tile.classList.add("correct");
-      } else if (answerWord.includes(guess[i])) {
-        tile.classList.add("present");
-      } else {
-        tile.classList.add("absent");
-      }
+    if (status[i]) {
+      tile.classList.add(status[i]);
     }
-
     row.push(tile);
   }
   return row;
@@ -82,14 +100,34 @@ function handleKey(key) {
       message.textContent = "Invalid word. Try a valid 5-letter word.";
       return;
     }
+
+    const status = getGuessStatus(currentGuess);
+
+    for (let i = 0; i < 5; i++) {
+      const letter = currentGuess[i];
+      const state = status[i];
+      const prev = keyboardStatus[letter];
+      if (
+        state === "correct" ||
+        (state === "present" && prev !== "correct") ||
+        (state === "absent" && !prev)
+      ) {
+        keyboardStatus[letter] = state;
+      }
+    }
+
     attempts.push(currentGuess);
+    createKeyboard();
+    updateBoard();
+
     if (currentGuess === answer) {
-  message.textContent = "You got it!";
-  document.getElementById("popup-quote").textContent = quote;
-  document.getElementById("popup").classList.remove("hidden");
+      message.textContent = "You got it!";
+      document.getElementById("popup-quote").textContent = quote;
+      document.getElementById("popup").classList.remove("hidden");
     } else if (attempts.length === maxAttempts) {
       message.textContent = `Out of tries! The word was: ${answer}. No quote today 🙁`;
     }
+
     currentGuess = "";
   } else if (key === "Backspace") {
     currentGuess = currentGuess.slice(0, -1);
@@ -103,13 +141,22 @@ function createKeyboard() {
   keyboard.innerHTML = "";
   keys.forEach(row => {
     const rowDiv = document.createElement("div");
+    rowDiv.classList.add("keyboard-row");
+
     row.forEach(k => {
       const keyBtn = document.createElement("button");
       keyBtn.textContent = k === "Backspace" ? "⌫" : k;
       keyBtn.className = "key";
+      if (keyboardStatus[k]) {
+        keyBtn.classList.add(keyboardStatus[k]);
+      }
+
+      keyBtn.setAttribute("data-key", k);
+      keyBtn.setAttribute("aria-label", k);
       keyBtn.onclick = () => handleKey(k);
       rowDiv.appendChild(keyBtn);
     });
+
     keyboard.appendChild(rowDiv);
   });
 }

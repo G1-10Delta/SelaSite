@@ -39,36 +39,38 @@ body {
 }
 .keyboard {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding-bottom: env(safe-area-inset-bottom); /* iOS safe zone */
+}
+
+.keyboard-row {
+  display: flex;
   justify-content: center;
-  max-width: 600px;
-  margin: 1rem auto;
+  gap: 0.4rem;
 }
+
 .key {
-  padding: 0.75rem;
-  margin: 5px;
-  min-width: 40px;
-  background: #ddd;
-  border-radius: 5px;
-  font-size: 1.2rem;
+  flex: 1;
+  max-width: 10vw;
+  min-width: 2rem;
+  padding: 1rem 0.5rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 1.1rem;
+  background-color: #ddd;
+  color: #333;
+  font-weight: bold;
   text-transform: uppercase;
-  cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
 }
-.key:hover {
-  background: #bbb;
+
+.key:active {
+  background-color: #bbb;
 }
-@media (max-width: 600px) {
-  .tile {
-    width: 45px;
-    height: 45px;
-    font-size: 1.5rem;
-    line-height: 45px;
-  }
-  .key {
-    padding: 0.5rem;
-    font-size: 1rem;
-  }
-}
+
 .popup {
   position: fixed;
   top: 0;
@@ -94,4 +96,18 @@ body {
 }
 .hidden {
   display: none;
+}
+.key.correct {
+  background-color: #6aaa64;
+  color: white;
+}
+
+.key.present {
+  background-color: #c9b458;
+  color: white;
+}
+
+.key.absent {
+  background-color: #787c7e;
+  color: white;
 }
